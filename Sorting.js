@@ -3,31 +3,72 @@ mycanvas.height= 300;
 const margin=30;
 const n= 20;
 const array=[];
-
-for(let i=0;i<n;i++){
-    array[i]= Math.random();
-}
-console.log(array);
+let moves=[];
 
 const cols=[];
-
-
-
 const myCanvas = document.getElementById("mycanvas");
 const spacing =(myCanvas.width-margin*2) / n;
 const ctx=myCanvas.getContext("2d");
 
 const maxColumnheight=200;
-for(let i=0;i<array.length;i++){
-    const x= i*spacing + spacing/2;
-    const y=myCanvas.height-margin - i*3;
-    const width=spacing-4;
-    const height=maxColumnheight*array[i];
-    cols[i]=new Column(x,y,width,height);
-    // cols[i].draw(ctx);
+
+
+init();
+
+let audiocntx=null;
+
+function playNote(freq){
+    if(audiocntx==null){
+        audiocntx=new(
+            AudioContext || 
+            webkitAudioContext ||
+            window.webkitAudioContext
+
+        )();
+
+    }
+    const dur=0.2;
+    const osc= audiocntx.createOscillator();
+    osc.frequency.value= freq;
+    osc.start();
+    osc.stop(audiocntx.currentTime+dur);
+
+    const node=audiocntx.createGain();
+    node.gain.value=0.4;
+    node.gain.linearRampToValueAtTime(
+         0, audiocntx.currentTime+dur
+        )
+    osc.connect(node);
+    node.connect(audiocntx.destination);
+
+
 }
 
-let moves=bubblesort(array);
+
+
+function init(){
+    console.log(array);
+    for(let i=0;i<n;i++){
+        array[i]= Math.random();
+    }
+    moves=[];
+    for(let i=0;i<array.length;i++){
+        const x= i*spacing + spacing/2;
+        const y=myCanvas.height-margin - i*3;
+        const width=spacing-4;
+        const height=maxColumnheight*array[i];
+        cols[i]=new Column(x,y,width,height);
+        // cols[i].draw(ctx);
+    }
+    
+}
+function play(){
+    moves=bubblesort(array);
+}
+
+
+
+
 
 animate();
 
@@ -65,6 +106,8 @@ function animate(){
     if(!changed && moves.length>0){
         const move=moves.shift();
         const[i,j]=move.indices;
+        playNote(cols[i].height+cols[j].height);
+        
         if(move.swap){
             cols[i].moveTo(cols[j]);
             cols[j].moveTo(cols[i]);
@@ -72,6 +115,8 @@ function animate(){
 
         }else{
             //to-do
+            cols[i].jump();
+            cols[j].jump();
         }
         }
 
